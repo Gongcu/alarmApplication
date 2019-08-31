@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#008577</color>
+    <color name="colorPrimaryDark">#00574B</color>
+    <color name="colorAccent">#D81B60</color>
+
+    <color name="colorSub">#ffff5500</color> <!--orang red -->
+    <color name="colorMain">#303030</color>
+    <color name="colorSub4">#ff1e90ff</color> <!--dodger blue-->
+    <color name="colorWhite">#ffffff</color>
+    <color name="colorBlack">#151515</color>
+    <color name="androidColor">#a9dbf0cb</color>
+</resources>

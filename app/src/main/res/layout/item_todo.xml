@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:paddingVertical="2dp">
+
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_weight="1">
+    <TextView
+            android:text="할 일" android:paddingLeft="5dp"
+            android:layout_width="wrap_content"
+            android:textColor="@color/colorMain"
+            android:layout_height="wrap_content" android:id="@+id/todoTextView"
+    />
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_weight="1">
+    <TextView
+            android:text="마감기한"
+            android:layout_weight="1"
+            android:textColor="@color/colorMain"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:id="@+id/deadLineTextView"/>
+    </LinearLayout>
+
+</LinearLayout>
