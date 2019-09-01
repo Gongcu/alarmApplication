@@ -27,6 +27,8 @@ import com.example.alarmapplication.activity.MainActivity;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class AlarmService extends JobIntentService {
     public static final String CHANNEL_ID = "ForegroundServiceChannel";
@@ -38,12 +40,20 @@ public class AlarmService extends JobIntentService {
 
     @Override
     protected void onHandleWork(@NonNull Intent intent) {
-        String getState = intent.getExtras().getString("state");
+        //String getState = intent.getExtras().getString("state");
         Log.d("onStartCommand() 실행", "서비스 시작");
-        String input = intent.getStringExtra("inputExtra");
-        if(getState.equals("alarm on"))
-            notification("title","message",AlarmService.this);
-        onStopCurrentWork();
+        //String input = intent.getStringExtra("inputExtra"); 백그라운드 상태일때 NULL로 뜸 NULL처리를 하거나 없애거나 일단은 IF( EQAUL ALARM ON ) 지움
+        Timer timer = new Timer();
+            TimerTask TT = new TimerTask() {
+                @Override
+                public void run() {
+                    // 반복실행할 구문
+                    notification("title", "message", AlarmService.this);
+                }
+
+            };
+            timer.schedule(TT,0,100000);
+        //onStopCurrentWork();
 
     }
 

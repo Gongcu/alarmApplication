@@ -182,8 +182,7 @@ public class DialogActivity extends AppCompatActivity implements View.OnClickLis
                         Toast.makeText(DialogActivity.this,"Alarm 예정 " + calendar.get(Calendar.YEAR)+" "+calendar.get(Calendar.MONTH)+" "+calendar.get(Calendar.DAY_OF_MONTH)+" "
                                 + alarmTime,Toast.LENGTH_SHORT).show();
                         final Intent my_intent = new Intent(getApplicationContext(), AlarmReceiver.class);
-                        Log.d("date",+ calendar.get(Calendar.YEAR)+" "+calendar.get(Calendar.MONTH)+" "+calendar.get(Calendar.DAY_OF_MONTH)+" ");
-                        Log.d("time",+ calendar.get(Calendar.HOUR_OF_DAY)+" "+calendar.get(Calendar.MINUTE)+" ");
+
                         my_intent.putExtra("state","alarm on");
                         pendingIntent = PendingIntent.getBroadcast(DialogActivity.this, 0, my_intent,
                                 PendingIntent.FLAG_UPDATE_CURRENT);
