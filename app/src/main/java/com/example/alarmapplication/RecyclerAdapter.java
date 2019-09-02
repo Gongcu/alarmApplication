@@ -132,14 +132,10 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ItemVi
                         dialog.setDialogListener(new DialogListener() {
                             @Override
                             public void onPositiveClicked(String name, String date, String time, int alarmDay, String alarmTime) {
-
                             }
-
                             @Override
                             public void onPositiveClicked(String date, String time) {
-
                             }
-
                             @Override
                             public void onPositiveClicked(String time) {
                             }

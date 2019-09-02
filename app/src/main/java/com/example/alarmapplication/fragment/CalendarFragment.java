@@ -234,31 +234,6 @@ public class CalendarFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
     }
 
-    public int addData(String name, String date, String time){
-        ContentValues cv = new ContentValues();
-        cv.put(DateContract.DateContractEntry.COLUMN_NAME,name);
-        cv.put(DateContract.DateContractEntry.COLUMN_DATE,date);
-        cv.put(DateContract.DateContractEntry.COLUMN_TIME,time);
-        mDb.insert(DateContract.DateContractEntry.TABLE_NAME,null,cv);
-
-        Cursor c = mDb.rawQuery("select * from "+ DateContract.DateContractEntry.TABLE_NAME,null);
-        if(c.getCount()>0){
-            c.moveToFirst();
-            int id = c.getInt(c.getColumnIndex(DateContract.DateContractEntry._ID));
-            c.close();
-            return  id;
-        }else{
-            return 0;
-        }
-    }
-
-    public boolean addAlarm(int day, String time, int PARENT_ID){
-        ContentValues cv = new ContentValues();
-        cv.put(AlarmContract.Entry.COLUMN_DAY,day);
-        cv.put(AlarmContract.Entry.COLUMN_TIME,time);
-        cv.put(AlarmContract.Entry.COLUMN_TIME,PARENT_ID);
-        return nDb.insert(AlarmContract.Entry.TABLE_NAME,null,cv)>0;
-    }
 
     public void setRecyclerView(String date){
         long id=0;

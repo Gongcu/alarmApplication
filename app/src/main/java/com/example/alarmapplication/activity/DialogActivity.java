@@ -57,6 +57,7 @@ public class DialogActivity extends AppCompatActivity implements View.OnClickLis
     private String alarmDate;
     private String alarmTime;
 
+    private String deadLineTime;
     private String hour,minute;
     InputMethodManager imm;
     private Calendar calendar;
@@ -92,54 +93,6 @@ public class DialogActivity extends AppCompatActivity implements View.OnClickLis
         Date d =new Date();
         date = dateFormat.format(d);
 
-        datePicker.init(datePicker.getYear(), datePicker.getMonth(), datePicker.getDayOfMonth(),
-                new DatePicker.OnDateChangedListener() {
-
-                    @Override
-                    public void onDateChanged(DatePicker view, int year, int monthOfYear,
-                                              int dayOfMonth) {
-                        // TODO Auto-generated method stub
-
-                        if(monthOfYear<9) {
-                            if (dayOfMonth < 10)
-                                date = year + "-0" + (monthOfYear+1) + "-0" + dayOfMonth;
-                            else
-                                date = year + "-0" + (monthOfYear+1)  + "-" + dayOfMonth;
-                        }
-                        else {
-                            if (dayOfMonth < 10)
-                                date = year + "-" + (monthOfYear+1)  + "-0" + dayOfMonth;
-                            else
-                                date = year + "-" + (monthOfYear+1) + "-" + dayOfMonth;
-                        }
-                    }
-                });
-
-        aDatePicker.init(aDatePicker.getYear(), aDatePicker.getMonth(), aDatePicker.getDayOfMonth(),
-                new DatePicker.OnDateChangedListener() {
-                    @Override
-                    public void onDateChanged(DatePicker view, int year, int monthOfYear,
-                                              int dayOfMonth) {
-                        //calendar.set(Calendar.YEAR,year);
-                        //calendar.set(Calendar.MONTH,monthOfYear);
-                        //calendar.set(Calendar.DAY_OF_MONTH,dayOfMonth);
-                        // TODO Auto-generated method stub
-                        if(monthOfYear<9) {
-                            if (dayOfMonth < 10)
-                                alarmDate = year + "-0" + (monthOfYear+1) + "-0" + dayOfMonth;
-                            else
-                                alarmDate = year + "-0" + (monthOfYear+1)  + "-" + dayOfMonth;
-                        }
-                        else {
-                            if (dayOfMonth < 10)
-                                alarmDate = year + "-" + (monthOfYear+1)  + "-0" + dayOfMonth;
-                            else
-                                alarmDate = year + "-" + (monthOfYear+1) + "-" + dayOfMonth;
-                        }
-                    }
-                });
-
-
         saveBtn.setOnClickListener(this);
         quitBtn.setOnClickListener(this);
         keyBoardButton.setOnClickListener(this);
@@ -154,40 +107,70 @@ public class DialogActivity extends AppCompatActivity implements View.OnClickLis
                     Toast.makeText(DialogActivity.this,"일정을 입력해주세요.",Toast.LENGTH_SHORT).show();
                 } else {
                     name = editText.getText().toString();
+
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        hour = timePicker.getHour() + "";
-                        setMinute(timePicker.getMinute());
+                        deadLineTime = timePicker.getHour() + "시";
+                        deadLineTime+=setMinute(timePicker.getMinute());
                     } else {
-                        hour = timePicker.getCurrentHour() + "";
-                        setMinute(timePicker.getCurrentMinute());
+                        deadLineTime = timePicker.getCurrentHour() + "시";
+                        deadLineTime+=setMinute(timePicker.getCurrentMinute());
                     }
-                    String time = hour +"시 " +minute+"분";
                     if(checkBox.isChecked()){
-                        addData(name,date,time);
+                        initDate();
+                        addData(name,date,deadLineTime);
                     }else {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            hour = timePicker.getHour() + "";
-                            setMinute(timePicker.getMinute());
-                            calendar.set(Calendar.HOUR_OF_DAY,aTimePicker.getHour());
-                            calendar.set(Calendar.MINUTE,aTimePicker.getMinute());
+                            deadLineTime = timePicker.getHour() + "시";
+                            deadLineTime+=setMinute(timePicker.getMinute());
+                            alarmTime= aTimePicker.getHour() + "시";
+                            alarmTime+=setMinute(aTimePicker.getMinute());
                         } else {
-                            hour = timePicker.getCurrentHour() + "";
-                            setMinute(timePicker.getCurrentMinute());
-                            calendar.set(Calendar.HOUR_OF_DAY,aTimePicker.getCurrentHour());
-                            calendar.set(Calendar.MINUTE,aTimePicker.getCurrentMinute());
-
+                            deadLineTime = timePicker.getCurrentHour() + "시";
+                            deadLineTime+=setMinute(timePicker.getCurrentMinute());
+                            alarmTime= aTimePicker.getCurrentHour() + "시";
+                            alarmTime+=setMinute(aTimePicker.getCurrentMinute());
                         }
-                        String alarmTime = hour +"시 " +minute+"분";
-                        addAlarm(alarmDate, alarmTime, addData(name, date, time));
-                        Toast.makeText(DialogActivity.this,"Alarm 예정 " + calendar.get(Calendar.YEAR)+" "+calendar.get(Calendar.MONTH)+" "+calendar.get(Calendar.DAY_OF_MONTH)+" "
-                                + alarmTime,Toast.LENGTH_SHORT).show();
-                        final Intent my_intent = new Intent(getApplicationContext(), AlarmReceiver.class);
+                        initDate();
+                        initAlarmDate();
+                        addAlarm(alarmDate, alarmTime, addData(name, date, deadLineTime));
 
+                        Toast.makeText(DialogActivity.this,"Alarm 예정 " + alarmDate+" "+ alarmTime,Toast.LENGTH_SHORT).show();
+                        //nDb.delete(AlarmContract.Entry.TABLE_NAME, AlarmContract.Entry.COLUMN_KEY+"=26",null);
+                       // nDb.delete(AlarmContract.Entry.TABLE_NAME, AlarmContract.Entry.COLUMN_KEY+"=19",null);
+                       // nDb.delete(AlarmContract.Entry.TABLE_NAME, AlarmContract.Entry.COLUMN_KEY+"=21",null);
+                        Cursor c = nDb.rawQuery("select * from "+AlarmContract.Entry.TABLE_NAME+" order by "+AlarmContract.Entry.COLUMN_DAY+" asc, "
+                                +AlarmContract.Entry.COLUMN_TIME+" asc",null);
+                        if(c!=null){
+                            c.moveToFirst();
+                            String date = c.getString(c.getColumnIndex(AlarmContract.Entry.COLUMN_DAY));
+                            String alarmTime = c.getString(c.getColumnIndex(AlarmContract.Entry.COLUMN_TIME));
+
+                            int year = Integer.parseInt(date.substring(0,4));
+                            int month = Integer.parseInt(date.substring(5,7))-1;
+                            int day = Integer.parseInt(date.substring(8,10));
+
+                            int hour = Integer.parseInt(alarmTime.substring(0,2));
+                            int minute = Integer.parseInt(alarmTime.substring(3,5));
+                            calendar.set(year,month,day);
+                            calendar.set(Calendar.HOUR_OF_DAY, hour);
+                            calendar.set(Calendar.MINUTE, minute);
+                            calendar.set(Calendar.SECOND,0);
+                        }
+                        c.close();
+                        final Intent my_intent = new Intent(getApplicationContext(), AlarmReceiver.class);
                         my_intent.putExtra("state","alarm on");
                         pendingIntent = PendingIntent.getBroadcast(DialogActivity.this, 0, my_intent,
                                 PendingIntent.FLAG_UPDATE_CURRENT);
-                        alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(),
-                                pendingIntent);
+                        Log.d("calendar", "날짜 " +calendar.get(Calendar.YEAR)+" "+calendar.get(Calendar.MONTH)+" "+calendar.get(Calendar.DAY_OF_MONTH)
+                        +" 시간 "+calendar.get(Calendar.HOUR_OF_DAY)+" "+calendar.get(Calendar.MINUTE)+" "+calendar.get(Calendar.SECOND));
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                            alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+                        } else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+                        } else {
+                            alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(),
+                                    pendingIntent);
+                        }
                     }
                 }
                 Intent intent = new Intent(DialogActivity.this, MainActivity.class);
@@ -228,7 +211,7 @@ public class DialogActivity extends AppCompatActivity implements View.OnClickLis
 
         Cursor c = mDb.rawQuery("select * from "+ DateContract.DateContractEntry.TABLE_NAME,null);
         if(c.getCount()>0){
-            c.moveToFirst();
+            c.moveToLast();
             int id = c.getInt(c.getColumnIndex(DateContract.DateContractEntry._ID));
             c.close();
             return  id;
@@ -238,7 +221,6 @@ public class DialogActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     public boolean addAlarm(String date, String time, int PARENT_ID){
-
         ContentValues cv = new ContentValues();
         cv.put(AlarmContract.Entry.COLUMN_DAY,date);
         cv.put(AlarmContract.Entry.COLUMN_TIME,time);
@@ -246,10 +228,40 @@ public class DialogActivity extends AppCompatActivity implements View.OnClickLis
         return nDb.insert(AlarmContract.Entry.TABLE_NAME,null,cv)>0;
     }
 
-    private void setMinute(int min) {
+    private String setMinute(int min) {
         if (min >= 10)
-            minute = min + "";
+            return minute = min + "분";
         else
-            minute = "0" + min;
+            return minute = "0" + min+"분";
+    }
+
+    private void initDate(){
+        if(datePicker.getMonth()<9) {
+            if (datePicker.getDayOfMonth() < 10)
+                date = datePicker.getYear() + "-0" + (datePicker.getMonth()+1) + "-0" + datePicker.getDayOfMonth();
+            else
+                date = datePicker.getYear() + "-0" + (datePicker.getMonth()+1)  + "-" + datePicker.getDayOfMonth();
+        }
+        else {
+            if (datePicker.getDayOfMonth()  < 10)
+                date = datePicker.getYear() + "-" + (datePicker.getMonth()+1)  + "-0" + datePicker.getDayOfMonth();
+            else
+                date = datePicker.getYear() + "-" + (datePicker.getMonth()+1) + "-" + datePicker.getDayOfMonth();
+        }
+    }
+
+    private void initAlarmDate(){
+        if(aDatePicker.getMonth()<9) {
+            if (aDatePicker.getDayOfMonth() < 10)
+                alarmDate = aDatePicker.getYear() + "-0" + (aDatePicker.getMonth()+1) + "-0" + aDatePicker.getDayOfMonth();
+            else
+                alarmDate = aDatePicker.getYear() + "-0" + (aDatePicker.getMonth()+1)  + "-" + aDatePicker.getDayOfMonth();
+        }
+        else {
+            if (datePicker.getDayOfMonth()  < 10)
+                alarmDate = aDatePicker.getYear() + "-" + (aDatePicker.getMonth()+1)  + "-0" + aDatePicker.getDayOfMonth();
+            else
+                alarmDate = aDatePicker.getYear() + "-" + (aDatePicker.getMonth()+1) + "-" + aDatePicker.getDayOfMonth();
+        }
     }
 }
