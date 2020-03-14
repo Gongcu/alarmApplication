@@ -8,6 +8,9 @@
 
     <ScrollView android:layout_width="match_parent" android:layout_height="match_parent" >
         <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
             <com.prolificinteractive.materialcalendarview.MaterialCalendarView
                 android:id="@+id/calendarView"
                 android:layout_width="match_parent"
@@ -15,48 +18,21 @@
                 app:mcv_selectionColor="#a9dbf0cb"
                 app:mcv_showOtherDates="defaults" >
             </com.prolificinteractive.materialcalendarview.MaterialCalendarView>
+                <Button
+                    android:layout_width="45dp"
+                    android:layout_height="45dp"
+                    android:id="@+id/imageAddButton"
+                    android:background="@drawable/addbutton_states"
+                    android:layout_gravity="end|bottom"
+                    android:layout_marginRight="10dp"
+                    android:layout_marginBottom="10dp"/>
+            </FrameLayout>
             <LinearLayout
-                android:layout_marginTop="-20dp"
                 android:layout_width="match_parent" android:layout_height="match_parent"
                 android:orientation="horizontal" >
-                <RelativeLayout android:layout_width="wrap_content" android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:layout_weight="0.5"
-                    >
-                    <TextView
-                        android:layout_centerHorizontal="true"
-                        android:gravity="center"
-                        android:textSize="40dp"
-                        android:textStyle="bold"
-                        android:text="10"
-                        android:textColor="@color/colorMain"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" android:id="@+id/dateTextView"/>
-                    <TextView
-                        android:layout_centerHorizontal="true"
-                        android:layout_below="@id/dateTextView"
-                        android:gravity="center"
-                        android:layout_weight="1"
-                        android:textSize="25dp"
-                        android:textStyle="bold"
-                        android:text="sat"
-                        android:textColor="@color/colorMain"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" android:id="@+id/dayTextView"/>
-                    <Button
-                        android:layout_centerHorizontal="true"
-                        android:layout_below="@id/dayTextView"
-                        android:layout_width="45dp"
-                        android:layout_marginTop="15dp"
-                        android:layout_height="45dp"
-                        android:id="@+id/imageAddButton"
-                        android:background="@drawable/addbutton_states"
-                        android:layout_marginRight="20dp"
-                        android:layout_marginBottom="10dp"/>
-                </RelativeLayout>
                 <androidx.cardview.widget.CardView android:layout_width="wrap_content"
                     app:cardUseCompatPadding="true"
-                    android:paddingRight="10dp"
+                    android:layout_margin="10dp"
                     android:layout_height="match_parent" android:layout_weight="5">
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
 

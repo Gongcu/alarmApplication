@@ -10,6 +10,7 @@ import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.database.CursorIndexOutOfBoundsException;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.media.MediaPlayer;
@@ -39,6 +40,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class AlarmService extends JobIntentService {
+    private static final String TAG ="AlarmService";
     public static final String CHANNEL_ID = "ForegroundServiceChannel";
     static final int JOB_ID = 1001;
     private SQLiteDatabase mDb,nDb;
@@ -50,6 +52,8 @@ public class AlarmService extends JobIntentService {
 
     private String recentDate="";
     private String recentTime="";
+
+    private int REQUEST_CODE;
     static void enqueueWork(Context context, Intent work) {
         enqueueWork(context, AlarmService.class, JOB_ID, work);
     }
@@ -64,51 +68,11 @@ public class AlarmService extends JobIntentService {
 
         //String getState = intent.getExtras().getString("state");
         Log.d("onStartCommand() 실행", "서비스 시작");
-        //String input = intent.getStringExtra("inputExtra"); 백그라운드 상태일때 NULL로 뜸 NULL처리를 하거나 없애거나 일단은 IF( EQAUL ALARM ON ) 지움
-        /*
-        Timer timer = new Timer();
-            TimerTask TT = new TimerTask() {
-                @Override
-                public void run() {
-                    // 반복실행할 구문
-                    Cursor c = nDb.rawQuery("select * from "+ AlarmContract.Entry.TABLE_NAME+" order by "+AlarmContract.Entry.COLUMN_DAY+" desc, "
-                            +AlarmContract.Entry.COLUMN_TIME+" desc",null);
-                    if(c!=null){
-                        c.moveToFirst();
-                        String date = c.getString(c.getColumnIndex(AlarmContract.Entry.COLUMN_DAY));
-                        String alarmTime = c.getString(c.getColumnIndex(AlarmContract.Entry.COLUMN_TIME));
 
-                        init(date,alarmTime);
-                    }
-                    c.close();
-                    notification("큰일났어!", "message", AlarmService.this);
-                }
-
-            };
-        timer.schedule(TT,0,100000);
-        */
         notification("큰일났어!", "message", AlarmService.this);
-        date = new Date();
-        String str = sdf.format(date);
-        String date = str.substring(0,10);
-        String time = str.substring(11,17);
-        Cursor c = nDb.rawQuery("select * from "+ AlarmContract.Entry.TABLE_NAME+" order by "+AlarmContract.Entry.COLUMN_DAY+" asc, "
-                +AlarmContract.Entry.COLUMN_TIME+" asc",null);
-        if(c!=null)
-        {
-            c.moveToFirst();
-            recentTime = c.getString(c.getColumnIndex(AlarmContract.Entry.COLUMN_TIME));
-            recentDate = c.getString(c.getColumnIndex((AlarmContract.Entry.COLUMN_DAY)));
-            Log.d("Date to String",date+" "+time);
-            Log.d("cursor", recentDate+" "+recentTime);
-            c.close();
-            if(recentTime!=null || recentDate!=null)
-                nDb.delete(AlarmContract.Entry.TABLE_NAME,AlarmContract.Entry.COLUMN_DAY+"=?" +" and "+AlarmContract.Entry.COLUMN_TIME+"=?", new String[] {recentDate,recentTime});
-            else
-                nDb.delete(AlarmContract.Entry.TABLE_NAME,AlarmContract.Entry.COLUMN_DAY+"=?" +" and "+AlarmContract.Entry.COLUMN_TIME+"=?", new String[] {date,time});
-        } else{
-            nDb.delete(AlarmContract.Entry.TABLE_NAME,AlarmContract.Entry.COLUMN_DAY+"=?" +" and "+AlarmContract.Entry.COLUMN_TIME+"=?", new String[] {date,time});
-        }
+
+        deleteDB();
+
         stopSelf();
 
     }
@@ -122,27 +86,30 @@ public class AlarmService extends JobIntentService {
         final AlarmManager alarmManager=(AlarmManager) getSystemService(ALARM_SERVICE);
         final Intent my_intent = new Intent(getApplicationContext(), AlarmReceiver.class);
         my_intent.putExtra("state","alarm on");
-        pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, my_intent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
+        my_intent.putExtra("REQUEST_CODE",REQUEST_CODE);
 
         Cursor c = nDb.rawQuery("select * from "+ AlarmContract.Entry.TABLE_NAME+" order by "+AlarmContract.Entry.COLUMN_DAY+" asc, "
                 +AlarmContract.Entry.COLUMN_TIME+" asc",null);
-        if(c!=null){
+        if(c.getCount()>0) {
             c.moveToFirst();
             String date = c.getString(c.getColumnIndex(AlarmContract.Entry.COLUMN_DAY));
             String alarmTime = c.getString(c.getColumnIndex(AlarmContract.Entry.COLUMN_TIME));
-            init(date,alarmTime);
-        }
-        c.close();
-        Log.d("before reset",calendar.get(Calendar.YEAR)+"-"+calendar.get(Calendar.MONTH)+"-"+calendar.get(Calendar.DAY_OF_MONTH)+" "+
-                calendar.get(Calendar.HOUR_OF_DAY)+"시"+calendar.get(Calendar.MINUTE)+"분");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
-        } else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
-        } else {
-            alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(),
-                    pendingIntent);
+            REQUEST_CODE = c.getInt(c.getColumnIndex(AlarmContract.Entry.COLUMN_KEY));
+            Log.d(TAG,REQUEST_CODE+"");
+            init(date, alarmTime);
+            c.close();
+            pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), REQUEST_CODE, my_intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT);
+            Log.d("before reset", calendar.get(Calendar.YEAR) + "-" + calendar.get(Calendar.MONTH) + "-" + calendar.get(Calendar.DAY_OF_MONTH) + " " +
+                    calendar.get(Calendar.HOUR_OF_DAY) + "시" + calendar.get(Calendar.MINUTE) + "분");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+            } else {
+                alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(),
+                        pendingIntent);
+            }
         }
     }
 
@@ -161,13 +128,14 @@ public class AlarmService extends JobIntentService {
                     channelId, channelName, importance);
             notificationManager.createNotificationChannel(mChannel);
         }
-        Cursor c = nDb.rawQuery("select * from "+ AlarmContract.Entry.TABLE_NAME+" order by "+AlarmContract.Entry.COLUMN_DAY+" asc, "
-                +AlarmContract.Entry.COLUMN_TIME+" asc",null);
-        if(c!=null) {
+        Cursor c = nDb.rawQuery("select * from " + AlarmContract.Entry.TABLE_NAME + " order by " + AlarmContract.Entry.COLUMN_DAY + " asc, "
+                    + AlarmContract.Entry.COLUMN_TIME + " asc", null);
+        if(c.getCount()>0) {
             c.moveToFirst();
             int key = c.getInt(c.getColumnIndex(AlarmContract.Entry.COLUMN_KEY));
-            Cursor c2 = mDb.rawQuery("select * from "+ DateContract.DateContractEntry.TABLE_NAME+" where "+DateContract.DateContractEntry._ID+"="+key,null);
-            if(c2!=null) {
+            Log.d("key", "+" + key);
+            Cursor c2 = mDb.rawQuery("select * from " + DateContract.DateContractEntry.TABLE_NAME + " where " + DateContract.DateContractEntry._ID + "=" + key, null);
+            if (c2.getCount()>0) {
                 c2.moveToFirst();
                 text = c2.getString(c2.getColumnIndex(DateContract.DateContractEntry.COLUMN_NAME));
             }
@@ -187,7 +155,7 @@ public class AlarmService extends JobIntentService {
             mBuilder.setSmallIcon(R.drawable.noti);
         }
         TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
-        stackBuilder.addNextIntent(new Intent(context, DialogActivity.class));
+        stackBuilder.addNextIntent(new Intent(context, MainActivity.class));
         PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0,PendingIntent.FLAG_UPDATE_CURRENT);
         mBuilder.setContentIntent(resultPendingIntent);
 
@@ -204,11 +172,41 @@ public class AlarmService extends JobIntentService {
        int year = Integer.parseInt(date.substring(0,4));
        int month = Integer.parseInt(date.substring(5,7))-1;
        int day = Integer.parseInt(date.substring(8,10));
+       int hour, minute;
 
-       int hour = Integer.parseInt(alarmTime.substring(0,2));
-       int minute = Integer.parseInt(alarmTime.substring(3,5));
+       if(alarmTime.length()==5){
+           hour = Integer.parseInt(alarmTime.substring(0, 1));
+           minute = Integer.parseInt(alarmTime.substring(2, 4));
+       }else{
+           hour = Integer.parseInt(alarmTime.substring(0, 2));
+           minute = Integer.parseInt(alarmTime.substring(3, 5));
+       }
        calendar.set(year,month,day);
        calendar.set(Calendar.HOUR_OF_DAY, hour);
        calendar.set(Calendar.MINUTE, minute);
+   }
+
+   private void deleteDB(){
+       date = new Date();
+       String str = sdf.format(date);
+       String date = str.substring(0,10);
+       String time = str.substring(11,17);
+       Cursor c = nDb.rawQuery("select * from "+ AlarmContract.Entry.TABLE_NAME+" order by "+AlarmContract.Entry.COLUMN_DAY+" asc, "
+               +AlarmContract.Entry.COLUMN_TIME+" asc",null);
+       if(c.getCount()>0)
+       {
+           c.moveToFirst();
+           recentTime = c.getString(c.getColumnIndex(AlarmContract.Entry.COLUMN_TIME));
+           recentDate = c.getString(c.getColumnIndex((AlarmContract.Entry.COLUMN_DAY)));
+           //Log.d("Date to String",date+" "+time);
+           //Log.d("cursor", recentDate+" "+recentTime);
+           c.close();
+           if(recentTime!=null || recentDate!=null)
+               nDb.delete(AlarmContract.Entry.TABLE_NAME,AlarmContract.Entry.COLUMN_DAY+"=?" +" and "+AlarmContract.Entry.COLUMN_TIME+"=?", new String[] {recentDate,recentTime});
+           else
+               nDb.delete(AlarmContract.Entry.TABLE_NAME,AlarmContract.Entry.COLUMN_DAY+"=?" +" and "+AlarmContract.Entry.COLUMN_TIME+"=?", new String[] {date,time});
+       } else{
+           nDb.delete(AlarmContract.Entry.TABLE_NAME,AlarmContract.Entry.COLUMN_DAY+"=?" +" and "+AlarmContract.Entry.COLUMN_TIME+"=?", new String[] {date,time});
+       }
    }
 }

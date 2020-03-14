@@ -12,13 +12,16 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
@@ -34,6 +37,8 @@ import java.util.Calendar;
 import java.util.Date;
 
 public class DialogActivity extends AppCompatActivity implements View.OnClickListener{
+    private static final String TAG ="DialogActivity";
+    private static Context context;
     private EditText editText;
     private DatePicker datePicker;
     private TimePicker timePicker;
@@ -41,8 +46,8 @@ public class DialogActivity extends AppCompatActivity implements View.OnClickLis
     private DatePicker aDatePicker;
     private TimePicker aTimePicker;
 
+    private ScrollView scrollView;
     private Button saveBtn, quitBtn;
-    private Button keyBoardButton;
 
     private CheckBox checkBox;
 
@@ -66,13 +71,17 @@ public class DialogActivity extends AppCompatActivity implements View.OnClickLis
     private AlarmManager alarmManager;
     private PendingIntent pendingIntent;
 
+    private int REQUEST_CODE=1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        context = getApplicationContext();
         setContentView(R.layout.activity_dialog);
         calendar = Calendar.getInstance();
         alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
 
+        scrollView = findViewById(R.id.scroll_view);
         editText =findViewById(R.id.todoEditText);
 
         datePicker = findViewById(R.id.datePicker);
@@ -80,9 +89,9 @@ public class DialogActivity extends AppCompatActivity implements View.OnClickLis
         aDatePicker = findViewById(R.id.datePicker2);
         aTimePicker = findViewById(R.id.timePicker2);
 
+
         saveBtn = findViewById(R.id.saveBtn);
         quitBtn = findViewById(R.id.quitBtn);
-        keyBoardButton = findViewById(R.id.keyboardButton);
 
         checkBox = findViewById(R.id.alarmBox);
 
@@ -93,9 +102,10 @@ public class DialogActivity extends AppCompatActivity implements View.OnClickLis
         Date d =new Date();
         date = dateFormat.format(d);
 
+        scrollView.setOnTouchListener(onTouchListener);
+
         saveBtn.setOnClickListener(this);
         quitBtn.setOnClickListener(this);
-        keyBoardButton.setOnClickListener(this);
         checkBox.setOnClickListener(this);
     }
 
@@ -134,13 +144,13 @@ public class DialogActivity extends AppCompatActivity implements View.OnClickLis
                         initAlarmDate();
                         addAlarm(alarmDate, alarmTime, addData(name, date, deadLineTime));
 
-                        Toast.makeText(DialogActivity.this,"Alarm 예정 " + alarmDate+" "+ alarmTime,Toast.LENGTH_SHORT).show();
-                        //nDb.delete(AlarmContract.Entry.TABLE_NAME, AlarmContract.Entry.COLUMN_KEY+"=26",null);
-                       // nDb.delete(AlarmContract.Entry.TABLE_NAME, AlarmContract.Entry.COLUMN_KEY+"=19",null);
+                        Toast.makeText(DialogActivity.this,"알람 설정 완료",Toast.LENGTH_LONG).show();
+                        //nDb.delete(AlarmContract.Entry.TABLE_NAME, AlarmContract.Entry.COLUMN_KEY+"=51",null);
+                        //nDb.delete(AlarmContract.Entry.TABLE_NAME, AlarmContract.Entry.COLUMN_KEY+"=54",null);
                        // nDb.delete(AlarmContract.Entry.TABLE_NAME, AlarmContract.Entry.COLUMN_KEY+"=21",null);
                         Cursor c = nDb.rawQuery("select * from "+AlarmContract.Entry.TABLE_NAME+" order by "+AlarmContract.Entry.COLUMN_DAY+" asc, "
                                 +AlarmContract.Entry.COLUMN_TIME+" asc",null);
-                        if(c!=null){
+                        if(c.getCount()>0){
                             c.moveToFirst();
                             String date = c.getString(c.getColumnIndex(AlarmContract.Entry.COLUMN_DAY));
                             String alarmTime = c.getString(c.getColumnIndex(AlarmContract.Entry.COLUMN_TIME));
@@ -149,20 +159,33 @@ public class DialogActivity extends AppCompatActivity implements View.OnClickLis
                             int month = Integer.parseInt(date.substring(5,7))-1;
                             int day = Integer.parseInt(date.substring(8,10));
 
-                            int hour = Integer.parseInt(alarmTime.substring(0,2));
-                            int minute = Integer.parseInt(alarmTime.substring(3,5));
+                            int hour, minute;
+
+                            if(alarmTime.length()==5){
+                                hour = Integer.parseInt(alarmTime.substring(0, 1));
+                                minute = Integer.parseInt(alarmTime.substring(2, 4));
+                            }else{
+                                hour = Integer.parseInt(alarmTime.substring(0, 2));
+                                minute = Integer.parseInt(alarmTime.substring(3, 5));
+                            }
+
+                            REQUEST_CODE=c.getInt(c.getColumnIndex(AlarmContract.Entry.COLUMN_KEY));
                             calendar.set(year,month,day);
                             calendar.set(Calendar.HOUR_OF_DAY, hour);
                             calendar.set(Calendar.MINUTE, minute);
                             calendar.set(Calendar.SECOND,0);
                         }
                         c.close();
+
+                        //Setting alarm
                         final Intent my_intent = new Intent(getApplicationContext(), AlarmReceiver.class);
                         my_intent.putExtra("state","alarm on");
-                        pendingIntent = PendingIntent.getBroadcast(DialogActivity.this, 0, my_intent,
+                        my_intent.putExtra("REQUEST_CODE",REQUEST_CODE);
+                        Log.d(TAG,REQUEST_CODE+"");
+                        pendingIntent = PendingIntent.getBroadcast(DialogActivity.this, REQUEST_CODE, my_intent,
                                 PendingIntent.FLAG_UPDATE_CURRENT);
-                        Log.d("calendar", "날짜 " +calendar.get(Calendar.YEAR)+" "+calendar.get(Calendar.MONTH)+" "+calendar.get(Calendar.DAY_OF_MONTH)
-                        +" 시간 "+calendar.get(Calendar.HOUR_OF_DAY)+" "+calendar.get(Calendar.MINUTE)+" "+calendar.get(Calendar.SECOND));
+                        //Log.d("calendar", "날짜 " +calendar.get(Calendar.YEAR)+" "+calendar.get(Calendar.MONTH)+" "+calendar.get(Calendar.DAY_OF_MONTH)
+                        //+" 시간 "+calendar.get(Calendar.HOUR_OF_DAY)+" "+calendar.get(Calendar.MINUTE)+" "+calendar.get(Calendar.SECOND));
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                             alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
                         } else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
@@ -172,10 +195,10 @@ public class DialogActivity extends AppCompatActivity implements View.OnClickLis
                                     pendingIntent);
                         }
                     }
+                    Intent intent = new Intent(DialogActivity.this, MainActivity.class);
+                    startActivity(intent);
+                    finish();
                 }
-                Intent intent = new Intent(DialogActivity.this, MainActivity.class);
-                startActivity(intent);
-                finish();
                 break;
             case R.id.quitBtn:
                 Intent intent2 = new Intent(DialogActivity.this, MainActivity.class);
@@ -188,12 +211,16 @@ public class DialogActivity extends AppCompatActivity implements View.OnClickLis
                 }else
                     alarmLayout.setVisibility(View.VISIBLE);
                 break;
-            case R.id.keyboardButton:
-                imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-                imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
-                break;
         }
     }
+    View.OnTouchListener onTouchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+            return false;
+        }
+    };
 
     public void initDB(){
         dbHelper = new DbHelper(DialogActivity.this);
@@ -264,4 +291,8 @@ public class DialogActivity extends AppCompatActivity implements View.OnClickLis
                 alarmDate = aDatePicker.getYear() + "-" + (aDatePicker.getMonth()+1) + "-" + aDatePicker.getDayOfMonth();
         }
     }
+
+   public static Context getAppContext(){
+        return DialogActivity.context;
+   }
 }

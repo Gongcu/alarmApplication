@@ -26,6 +26,8 @@ public class MainActivity extends AppCompatActivity {
     private TabLayout mTabLayout;
     private ViewPager mViewPager;
     private AlarmManager alarm_manager;
+    private static Context context;
+
 
     private ContentsPagerAdapter mContentsPagerAdapter;
 
@@ -37,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mContext = this;
-
+        context = getApplicationContext();
         dbHelper_alarm = new DbHelper_alarm(getApplicationContext());
         nDb = dbHelper_alarm.getWritableDatabase();
 
@@ -45,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
         mViewPager = (ViewPager) findViewById(R.id.pager_content);
         mTabLayout = (TabLayout) findViewById(R.id.layout_tab);
         mTabLayout.addTab(mTabLayout.newTab().setCustomView(createTabView("캘린더")));
-        mTabLayout.addTab(mTabLayout.newTab().setCustomView(createTabView("할 일")));
+        mTabLayout.addTab(mTabLayout.newTab().setCustomView(createTabView("일정")));
 
         mContentsPagerAdapter = new ContentsPagerAdapter(
                 getSupportFragmentManager(), mTabLayout.getTabCount());
@@ -59,7 +61,6 @@ public class MainActivity extends AppCompatActivity {
         mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int i, float v, int i1) {
-
             }
 
             @Override
@@ -75,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 mViewPager.setCurrentItem(tab.getPosition());
-
             }
 
             @Override
@@ -96,37 +96,8 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public class AlarmHATT {
-        private Context context;
-        public AlarmHATT(Context context) {
-            this.context=context;
-        }
-        public void Alarm() {
-            //AlarmManager는 device에 미래에 대한 알림같은 행위를 등록할 때 사용합니다.
-            AlarmManager am = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-            //알람이 발생했을 경우, BradcastD에게 방송을 해주기 위해서 명시적으로 알려줍니다.
-            Intent intent = new Intent("com.example.alarmtestous.ALARM_START");
-            PendingIntent sender = PendingIntent.getBroadcast(MainActivity.this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-            Calendar calendar = Calendar.getInstance();
-            /*
-            /*다중 order 이중에 알람이 없는거 체크 해야되는 상태
-            Cursor cursor = nDb.rawQuery("select * from "+AlarmContract.Entry.TABLE_NAME+" order by "+AlarmContract.Entry.COLUMN_DAY+" desc, "+
-                    AlarmContract.Entry.COLUMN_TIME+" desc", null);
-            if(cursor!=null){
-                for(int i=0; i<cursor.getCount(); i++){
-                    cursor.moveToNext();
-                    //Log.d("day",c.getString())
-                }
-                cursor.close();
-            }*/
-
-            calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DATE),
-                    0,
-                    48,
-                    0);
-
-            //알람 예약
-            am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
-        }
+    public static Context getAppContext(){
+        return MainActivity.context;
     }
+
 }

@@ -1,7 +1,6 @@
 package com.example.alarmapplication.fragment;
 
 
-import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -21,11 +20,11 @@ import android.widget.TextView;
 
 import com.example.alarmapplication.activity.DialogActivity;
 import com.example.alarmapplication.calendar.DateDecorator;
-import com.example.alarmapplication.db.AlarmContract;
 import com.example.alarmapplication.db.DbHelper_alarm;
+import com.example.alarmapplication.db.EntireContract;
 import com.example.alarmapplication.dialog.DataDialog;
 import com.example.alarmapplication.R;
-import com.example.alarmapplication.RecyclerAdapter;
+import com.example.alarmapplication.adapter.RecyclerAdapter;
 import com.example.alarmapplication.calendar.OneDayDecorator;
 import com.example.alarmapplication.calendar.SaturdayDecorator;
 import com.example.alarmapplication.calendar.SundayDecorator;
@@ -55,10 +54,9 @@ public class CalendarFragment extends Fragment {
 
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
     private SimpleDateFormat sdfDay = new SimpleDateFormat("dd");
-    private ArrayList<DateContract> list;
-    private static final ArrayList<DateContract> EMPTY_LIST=new ArrayList<>();
-    private TextView dateTextView;
-    private TextView dayTextView;
+    private ArrayList<EntireContract> list;
+    private static final ArrayList<EntireContract> EMPTY_LIST=new ArrayList<>();
+
     private RecyclerView recyclerView;
     private RecyclerAdapter adapter;
     private Button button;
@@ -86,8 +84,6 @@ public class CalendarFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        dateTextView = view.findViewById(R.id.dateTextView);
-        dayTextView = view.findViewById(R.id.dayTextView);
         recyclerView = view.findViewById(R.id.recyclerView);
         materialCalendarView = view.findViewById(R.id.calendarView);
 
@@ -103,6 +99,11 @@ public class CalendarFragment extends Fragment {
                 new OneDayDecorator(),
                 new DateDecorator(getActivity()));
 
+        //Initialize
+        Date d = new Date();
+        String strDate =sdf.format(d);
+        setRecyclerView(strDate);
+
         materialCalendarView.setOnDateChangedListener(new OnDateSelectedListener() {
             @Override
             public void onDateSelected(@NonNull MaterialCalendarView widget, @NonNull CalendarDay date, boolean selected) {
@@ -113,8 +114,6 @@ public class CalendarFragment extends Fragment {
                 Calendar calendar = Calendar.getInstance();
                 calendar.setTime(d);
 
-                dateTextView.setText(text);
-                dayTextView.setText(dayToString(calendar.get(Calendar.DAY_OF_WEEK)));
                 setRecyclerView(strDate);
             }
         });
@@ -127,109 +126,6 @@ public class CalendarFragment extends Fragment {
                 startActivity(intent);
             }
         });
-                /*
-                dialog = new DataDialog(getActivity());
-                dialog.setDialogListener(new DialogListener() {
-                    // DialogListener 를 구현 추상 클래스이므로 구현 필수 -> dialog의 값을 전달 받음
-
-
-                    @Override
-                    public void onPositiveClicked(String date) {
-                        dialog_date = new DateDialog(getActivity(),date);
-                        dialog_date.setDialogListener(new DialogListener() {
-
-                            @Override
-                            public void onPositiveClicked(String name, String date, String time) {
-                                dialog_time = new TimeDialog(getActivity(),name,date,time);
-                                dialog_time.setDialogListener(new DialogListener() {
-                                    @Override
-                                    public void onPositiveClicked(String name, String date, String time, int alarmDay, String alarmTime) {
-                                        Toast.makeText(getActivity(),"name:"+name+" date:"+date+" time:"+time,Toast.LENGTH_LONG).show();
-                                        if(addAlarm(alarmDay,alarmTime,addData(name,date,time))) {
-                                            DateContract data = new DateContract(name, date, time);
-                                            Cursor cursor = mDb.rawQuery("select * from "+ DateContract.DateContractEntry.TABLE_NAME,null);
-                                            if(cursor.getCount()>0) {
-                                                cursor.moveToLast();
-                                                data.setId(cursor.getInt(cursor.getColumnIndex(DateContract.DateContractEntry._ID)));
-                                            }
-                                            String strDate =date;
-                                            String text="";
-                                            Date to=new Date();
-                                            try {
-                                                to = sdf.parse(date);
-                                                text = sdfDay.format(to);
-                                            }catch (ParseException e){e.printStackTrace();}
-
-                                            Calendar calendar = Calendar.getInstance();
-                                            calendar.setTime(to);
-
-                                            dateTextView.setText(text);
-                                            dayTextView.setText(dayToString(calendar.get(Calendar.DAY_OF_WEEK)));
-                                            setRecyclerView(date);
-
-                                        }
-                                    }
-
-                                    @Override
-                                    public void onPositiveClicked(String date) {
-
-                                    }
-
-                                    @Override
-                                    public void onPositiveClicked(String date, String time) {
-
-                                    }
-                                    @Override
-                                    public void onPositiveClicked(String name, String date, String time) {
-
-                                    }
-
-                                    @Override
-                                    public void onNegativeClicked() {
-                                        dialog_date.show(); // 다시 처음 dialog로
-                                    }
-                                });
-                                dialog_time.show();
-                            }
-                            @Override
-                            public void onPositiveClicked(String name, String date, String time, int alarmDay, String alarmTime) {
-
-                            }
-
-                            @Override
-                            public void onPositiveClicked(String date) {
-                            }
-
-                            @Override
-                            public void onPositiveClicked(String name, String date) {
-
-                            }
-
-                            @Override
-                            public void onNegativeClicked() {
-                                dialog.show(); // 다시 처음 dialog로
-                            }
-                        });
-                        dialog_date.show();
-                    }
-                    @Override
-                    public void onPositiveClicked(String name, String date, String time, int alarmDay, String alarmTime) {
-
-                    }
-                    @Override
-                    public void onPositiveClicked(String date, String time) {
-                    }
-                    @Override
-                    public void onPositiveClicked(String name, String date, String time) {
-
-                    }
-                    @Override
-                    public void onNegativeClicked() { }
-                });
-                dialog.show();
-            }
-            */
-        //});
 
         super.onViewCreated(view, savedInstanceState);
     }
@@ -253,7 +149,7 @@ public class CalendarFragment extends Fragment {
                 String strDate = c.getString(c.getColumnIndex(DateContract.DateContractEntry.COLUMN_DATE));
                 String time = c.getString(c.getColumnIndex(DateContract.DateContractEntry.COLUMN_TIME));
                 int current_id = c.getInt(c.getColumnIndex(DateContract.DateContractEntry._ID));
-                DateContract data = new DateContract(name, strDate, time);
+                EntireContract data = new EntireContract(name, strDate, time);
                 data.setId(current_id);
                 list.add(data);
             } while (c.moveToNext());
